@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    driver-class-name: oracle.jdbc.driver.OracleDriver
+    username: NBX
+    password: nbx
+    url: jdbc:oracle:thin:@127.0.0.1:1521:orcl
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+
+mybatis-plus:
+  type-aliases-package: com.hy.springbootstudy.pojo
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

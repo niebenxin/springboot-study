@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hy.springbootstudy.mapper.StudentMapper">
+    <!--  public void demo(@Param("id") String search,@Param("name")String sex)  -->
+    <resultMap id="qeueryAll_left_student_map" type="student">
+        <result column="class_name" property="classes.classname"></result>
+    </resultMap>
+    <select id="queryAll" resultMap="qeueryAll_left_student_map">
+        <bind name="names" value="'%'+name+'%'"/>
+        select
+        s.id,s.name,s.sex,s.classno,s.mgr,s.bdate,s.img,c.cno,c.class_name
+        from
+        student s,classes c
+        where s.classno=c.cno and (s.name LIKE #{names} or c.class_name like #{names} or s.sex like #{names})
+    </select>
+</mapper>

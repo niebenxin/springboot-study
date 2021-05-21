@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>主页面</title>
+    <link th:href="@{/layui/css/layui.css}" rel="stylesheet">
+    <link  th:href="@{https://g.csdnimg.cn/static/logo/favicon32.ico}"  rel="shortcut icon" type="image/x-icon" />
+<style>
+    .layui-table-box {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+    }
+</style>
+<body>
+<div style="margin-top: 30px">
+    <form class="layui-form" action="" onsubmit="return false">
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <div class="layui-input-inline">
+                    <input type="text" name="name" class="layui-input"
+                           placeholder="名称    |    性别    |    班级">
+                </div>
+                <div class="layui-input-inline">
+                    <select name="classno" id="classno" lay-verify="">
+                        <option value="">请选择班级</option>
+                    </select>
+                </div>
+                <div class="layui-input-inline">
+                    <button type="submit" class="layui-btn" lay-submit="" lay-filter="demo1">立即提交</button>
+                    <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<a th:href="@{/}" id="baseUrl"></a>
+<table class="layui-hide" id="test" lay-filter="test"></table>
+</body>
+<script th:src="@{/layui/layui.js}"></script>
+<script type="text/javascript">
+    layui.use(['table', 'layer', 'form'], function () {
+        var form = layui.form, $ = layui.$, layer = layui.layer, table = layui.table;
+        var baseUrl = $('#baseUrl').attr('href');
+        table.render({
+            elem: '#test'
+            , url: baseUrl + 'student/queryAllLay'
+            , toolbar: '#toolbarDemo' //开启头部工具栏，并为其绑定左侧模板
+            , page: true
+            , limits: [1, 3, 5, 7]
+            , limit: 3
+            , cols: [
+                [
+                    {type: 'checkbox', fixed: 'left'}
+                    , {field: 'id', width: '5%', title: 'ID', type: 'numbers',}
+                    , {field: 'name', width: '12%', title: '学生姓名', edit: 'text'}
+                    , {field: 'sex', width: '12%', title: '学生性别', templet: '#sexTpl'}
+                    , {field: 'sign', title: '所在班级', width: '15%', templet: '<div>{{d.classes.classname}}</div>'}
+                    , {field: 'mgr', title: '班主任名称', width: '10%'}
+                    , {field: 'bdate', title: '入学时间', width: '10%', templet: '#dateTpl'}
+                    , {field: 'img', title: '个人照片', width: '12%', templet: '#imgTpl'}
+                    , {fixed: 'right', title: '操作', width: '20%', toolbar: '#barDemo'}
+                ]
+            ]
+        });
+
+        /*监听头工具栏事件*/
+        table.on('toolbar(test)', function (obj) {
+            if (obj.event == 'deletes') {
+                var dateList = table.checkStatus(obj.config.id);
+                var list = dateList.data;
+                var ids = '';
+                if (list.length <= 0) {
+                    layer.msg('您未选择需要删除的内容');
+                } else {
+                    layer.confirm('确定要删除吗?', {icon: 3, title: '提示'}, function (index) {
+                        for (var i = 0; i < list.length; i++) {
+                            if (i < list.length - 1) {
+                                ids = ids + list[i].id + ",";
+                            }
+                            ids = ids + list[i].id;
+                        }
+                        $.ajax({
+                            type: 'post'
+                            , url: '/student/deleteAll/' + ids
+                            , success: function (data) {
+                                if (data == 1) {
+                                    layer.msg('删除成功');
+                                    //表格重载 test是根据表格的ID
+                                    table.reload('test');
+                                } else {
+                                    layer.msg('删除失败');
+                                }
+                            }
+                        });
+                        layer.close(index);
+                    });
+                }
+            } else if (obj.event == 'add') {
+                layer.open({
+                    type: 2,
+                    area: ['600px', '650px'], //宽高
+                    content: '/add.html',
+                    end: function () {
+                        table.reload('test');
+                    }
+                });
+            }
+        });
+
+        /*监听行工具栏事件*/
+        table.on('tool(test)', function (obj) { //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
+            var data = obj.data; //获得当前行数据
+            var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+            var tr = obj.tr; //获得当前行 tr 的 DOM 对象（如果有的话）
+            if (layEvent === 'detail') { //查看
+
+            } else if (layEvent === 'del') { //删除
+                layer.confirm('真的删除行么', function (index) {
+                    $.ajax({
+                        type: 'post'
+                        , url: baseUrl + 'student/delete/' + data.id
+                        , success: function (data) {
+                            if (data == 1) {
+                                layer.msg('删除成功');
+                                //表格重载 test是根据表格的ID
+                                table.reload('test');
+                            } else {
+                                layer.msg('删除失败');
+                            }
+                        }
+                    });
+                    layer.close(index);
+                    //向服务端发送删除指令
+                });
+            } else if (layEvent === 'edit') { //编辑
+                layer.open({
+                    type: 2,
+                    area: ['600px', '650px'], //宽高
+                    content: '/update.html?id=' + data.id,
+                    end: function () {
+                        table.reload('test');
+                    }
+                });
+            } else if (layEvent === 'LAYTABLE_TIPS') {
+                layer.alert('Hi，头部工具栏扩展的右侧图标。');
+            }
+        });
+
+        //监听提交
+        form.on('submit(demo1)', function (data) {
+            table.reload('test', {
+                where: {
+                    name: data.field.name
+                }
+                , page: {
+                    curr: 1
+                }
+            })
+            return false;
+        });
+
+        //动态下拉框
+        $.ajax({
+            type: 'post'
+            , url: baseUrl+'classes/queryAll'
+            , dataType: 'json'
+            , success: function (data) {
+                for (var i = 0; i < data.length; i++) {
+                    var op = new Option(data[i].classname, data[i].classno);
+                    $('#classno').append(op);
+                    layui.form.render('select');
+                }
+            }
+        });
+
+
+    });
+</script>
+
+<!--头工具栏-->
+<script type="text/html" id="toolbarDemo">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm" lay-event="deletes">删除已选数据</button>
+        <button class="layui-btn layui-btn-sm" lay-event="add">添加</button>
+        <button class="layui-btn layui-btn-sm" lay-event="isAll">验证是否全选</button>
+    </div>
+</script>
+
+<!--行工具栏-->
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" lay-event="detail">查看</a>
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+<script type="text/html" id="sexTpl">
+    {{#  if(d.sex == 'M'){ }}
+    男
+    {{#  } else { }}
+    女
+    {{#  } }}
+</script>
+<script type="text/html" id="imgTpl">
+    <div><img src="/upload/{{d.img}}" style='width:200px ;height:30px'></div>
+</script>
+<script type="text/html" id="dateTpl">
+    {{layui.util.toDateString(new Date(d.bdate).getTime(),"yyyy-MM-dd")}}
+</script>
+</html>
+

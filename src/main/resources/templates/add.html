@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>添加</title>
+    <link rel="icon" th:href="@{/logo.png}"/>
+    <link th:href="@{/layui/css/layui.css}" rel="stylesheet">
+</head>
+<style>
+    .layui-upload-drag {
+        margin-left: 109px;
+    }
+
+    form {
+        position: absolute;
+        margin-top: 40px;
+        width: 95%;
+    }
+</style>
+<body>
+<form id="f" class="layui-form" action="" onsubmit="return false" lay-filter="formm">
+    <div class="layui-form-item">
+        <label class="layui-form-label">学生姓名</label>
+        <div class="layui-input-block">
+            <input type="text" name="name" lay-verify="name" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">学生性别</label>
+        <div class="layui-input-block">
+            <input type="radio" name="sex" value="M" title="男" checked="">
+            <input type="radio" name="sex" value="F" title="女">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">班主任名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="mgr" lay-verify="mgr" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">班级名称</label>
+        <div class="layui-input-inline">
+            <select name="classno" id="classno">
+                <option value="">请选择班级</option>
+            </select>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">入学时间</label>
+        <div class="layui-inline">
+            <input type="text" name="bdate" id="bdate" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-upload-drag" id="upload">
+        <i class="layui-icon"></i>
+        <p>点击上传，或将文件拖拽到此处</p>
+        <div class="layui-hide" id="uploadDemoView">
+            <hr>
+            <img src="" alt="上传成功后渲染" style="max-width: 196px">
+        </div>
+    </div>
+    <input type="hidden" name="img" id="img">
+    <center>
+        <div class="layui-form-item" style="margin-top: 30px">
+            <div class="layui-inline">
+                <button type="submit" class="layui-btn" lay-submit="" lay-filter="sub" id="demo1">立即提交</button>
+                <button type="reset" id="cz" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </div>
+    </center>
+</form>
+</body>
+<script type="text/javascript" th:src="@{/layui/layui.js}"></script>
+<script>
+    layui.use(['form', 'layedit', 'laydate', 'layer', 'upload'], function () {
+        var form = layui.form
+            , layer = layui.layer
+            , layedit = layui.layedit
+            , laydate = layui.laydate
+            , upload = layui.upload
+            , $ = layui.$;
+
+        //日期
+        laydate.render({
+            elem: '#bdate'
+        });
+
+        //监听提交
+        upload.render({
+            elem: '#upload',
+            url: '/student/upload',
+            field: 'file',//input type=file name=img
+            done: function (res) {
+                if (res.data.length > 0) {
+                    $("#img").val(res.data[0].img);
+                    layer.msg('上传成功', {icon: 6});
+                    layui.$('#uploadDemoView').removeClass('layui-hide').find('img').attr('src', "/upload/" + res.data[0].img);
+                } else {
+                    layer.msg('上传失败', {icon: 5})
+                }
+            }
+        });
+        form.on('submit(sub)', function (data) {
+            $.ajax({
+                type: 'post'
+                , url: '/student/saves'
+                , data: data.field
+                , success: function (date1) {
+                    if (date1) {
+                        layer.msg('添加成功', {icon: 6});
+                        var index = parent.layer.getFrameIndex(window.name);
+                        parent.layer.close(index)
+                    } else {
+                        layer.msg('添加失败', {icon: 5});
+                    }
+                }
+            });
+        });
+
+        //动态下拉框
+        $.ajax({
+            type: 'post'
+            , url: '/classes/queryAll'
+            , dataType: 'json'
+            , success: function (data) {
+                for (var i = 0; i < data.length; i++) {
+                    var op = new Option(data[i].classname, data[i].classno);
+                    $('#classno').append(op);
+                    layui.form.render('select');
+                }
+            }
+        });
+
+
+    });
+</script>
+</html>
